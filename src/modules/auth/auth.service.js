@@ -3,6 +3,7 @@ import { AppError } from "../../utils/appError.js"
 import { User } from "../../entities/User.js";
 import { comparePassword, hashPassword } from "../../utils/password.js";
 import { signToken } from "../../utils/jwt.js";
+import { userResponseDto } from "../../dtos/user.dto.js";
 
 const userRepository = AppDataSource.getRepository(User);
 
@@ -20,8 +21,7 @@ export const registerUser = async  ({name, email, password}) => {
         password: hashedPassword
     });
     await userRepository.save(user);
-    delete user.password; /////////
-    return user;
+    return userResponseDto(user);
 };
 
 export const loginUser = async ({email, password}) => {
@@ -43,10 +43,10 @@ export const loginUser = async ({email, password}) => {
     userId: user.id,
   });
 
-//delete password so you don't return it 
-    delete user.password;
 
     // return user data and token
-    return {user, token};
-
+    return {
+        user: userResponseDto(user),
+        token,
+    };
 };

@@ -3,6 +3,7 @@ import { AppDataSource } from "../../config/data-source.js";
 import { Team } from "../../entities/Team.js";
 import { TeamMember } from "../../entities/TeamMember.js";
 import { AppError } from "../../utils/AppError.js";
+import { userResponseDto } from "../../dtos/user.dto.js";
 
 const teamRepository = AppDataSource.getRepository(Team);
 const teamMemberRepository = AppDataSource.getRepository(TeamMember);
@@ -27,7 +28,10 @@ export const createTeamService = async ({ name, description, user }) => {
 
   return {
     team,
-    membership,
+    membership: {
+      ...membership,
+      user: userResponseDto(membership.user),
+    },
   };
 };
 
@@ -53,8 +57,6 @@ export const getMyTeamService = async (userId) => {
 };
 
 export const getTeamByIdService = async ({teamId, userId}) => {
-  console.log("teamId:", teamId);
-console.log("userId:", userId);
   const membership = await teamMemberRepository.findOne({
     where : {
       user : {id:userId}, 
@@ -69,7 +71,11 @@ console.log("userId:", userId);
     throw new AppError("Team not found or you are not a member", 404);
   }
 
-  return membership;
+  return {
+    ...membership,
+    user: userResponseDto(membership.user),
+  };
+
 };
 
 export const updateTeamService = async ({teamId, userId, data}) => {

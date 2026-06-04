@@ -6,6 +6,8 @@ import { TeamMember } from "../../entities/TeamMember.js";
 import { User } from "../../entities/User.js";
 
 import { AppError } from "../../utils/AppError.js";
+import { userResponseDto } from "../../dtos/user.dto.js";
+
 
 const taskRepository = AppDataSource.getRepository(Task);
 const projectRepository = AppDataSource.getRepository(Project);
@@ -117,17 +119,11 @@ export const getProjectTasksService = async ({ projectId, userId }) => {
     },
   });
 
-  return tasks.map((task) => {
-    if (task.createdBy) {
-      delete task.createdBy.password;
-    }
-
-    if (task.assignedTo) {
-      delete task.assignedTo.password;
-    }
-
-    return task;
-  });
+    return tasks.map((task) => ({
+      ...task,
+      createdBy: userResponseDto(task.createdBy),
+      assignedTo: userResponseDto(task.assignedTo),
+    }));
 };
 
 export const getTaskByIdService = async ({ taskId, userId }) => {
@@ -158,16 +154,12 @@ export const getTaskByIdService = async ({ taskId, userId }) => {
   if (!membership) {
     throw new AppError("You are not allowed to view this task", 403);
   }
+    return {
+      ...task,
+      createdBy: userResponseDto(task.createdBy),
+      assignedTo: userResponseDto(task.assignedTo),
+    };
 
-  if (task.createdBy) {
-    delete task.createdBy.password;
-  }
-
-  if (task.assignedTo) {
-    delete task.assignedTo.password;
-  }
-
-  return task;
 };
 
 
@@ -250,15 +242,11 @@ export const updateTaskService = async ({ taskId, userId, data }) => {
 
   await taskRepository.save(task);
 
-  if (task.createdBy) {
-    delete task.createdBy.password;
-  }
-
-  if (task.assignedTo) {
-    delete task.assignedTo.password;
-  }
-
-  return task;
+  return {
+    ...task,
+    createdBy: userResponseDto(task.createdBy),
+    assignedTo: userResponseDto(task.assignedTo),
+  };
 };
 
 
@@ -346,13 +334,9 @@ export const updateTaskStatusService = async ({ taskId, userId, status }) => {
 
   await taskRepository.save(task);
 
-  if (task.createdBy) {
-    delete task.createdBy.password;
-  }
-
-  if (task.assignedTo) {
-    delete task.assignedTo.password;
-  }
-
-  return task;
+  return {
+    ...task,
+    createdBy: userResponseDto(task.createdBy),
+    assignedTo: userResponseDto(task.assignedTo),
+  };  
 };

@@ -2,6 +2,7 @@ import { AppDataSource } from "../../config/data-source.js";
 import { Project } from "../../entities/Project.js";
 import { TeamMember } from "../../entities/TeamMember.js";
 import { AppError } from "../../utils/AppError.js";
+import { userResponseDto } from "../../dtos/user.dto.js";
 
 const projectRepository  = AppDataSource.getRepository (Project);
 const teamMemberRepository   = AppDataSource.getRepository (TeamMember);
@@ -36,8 +37,11 @@ export const createProjectService = async ({teamId, userId, name, description}) 
   })
   await projectRepository.save(project);
 
-  return project;
 
+  return {
+    ...project,
+    createdBy: userResponseDto(membership.user),
+  };
 };
 
 
@@ -65,13 +69,11 @@ export const getTeamProjectsService = async ({ teamId, userId }) => {
     },
   });
 
-  return projects.map((project) => {
-    if (project.createdBy) {
-      delete project.createdBy.password;
-    }
+    return projects.map((project) => ({
+      ...project,
+      createdBy: userResponseDto(project.createdBy),
+    }));
 
-    return project;
-  });
 };
 
 export const getProjectByIdService = async ({ projectId, userId }) => {
@@ -100,9 +102,12 @@ export const getProjectByIdService = async ({ projectId, userId }) => {
     throw new AppError("You are not allowed to view this project", 403);
   }
 
-  delete project.createdBy.password;
 
-  return project;
+    return {
+    ...project,
+     createdBy: userResponseDto(project.createdBy),
+    };
+
 };
 
 export const updateProjectService  = async ({projectId, userId, data}) => {

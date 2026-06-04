@@ -2,7 +2,7 @@ import { AppDataSource  } from "../../config/data-source.js";
 import { AppError } from "../../utils/AppError.js";
 import { TeamMember } from "../../entities/TeamMember.js";
 import { User } from "../../entities/User.js";
-
+import { userResponseDto } from "../../dtos/user.dto.js";
 
 const teamMemberRepository = AppDataSource.getRepository(TeamMember);
 const userRepository = AppDataSource.getRepository(User);
@@ -34,15 +34,11 @@ console.log(members.map((m) => ({
   userId: m.user?.id,
 })));
 
-    return members.map((member) => ({
-  id: member.user.id,
-  name: member.user.name,
-  email: member.user.email,
-  role: member.role,
-  isOwner: member.isOwner,
-}));
-
-
+  return members.map((member) => ({
+    ...userResponseDto(member.user),
+    role: member.role,
+    isOwner: member.isOwner,
+  }));
 };
 
 
@@ -86,9 +82,11 @@ export const addMemberService = async ({teamId, currentUserId, email, role}) => 
     isOwner: false
   });
   await teamMemberRepository.save(newMembership);
-  delete newMembership.user.password;
-  return newMembership;
 
+    return {
+    ...newMembership,
+    user: userResponseDto(newMembership.user),
+  };
 };
 
 
@@ -122,9 +120,10 @@ export const changeMemberRoleService  = async ({teamId, currentUserId, memberId,
   
   memberToUpdate.role = role;
   await teamMemberRepository.save(memberToUpdate);
-  delete memberToUpdate.user.password;
-  return memberToUpdate;
-
+    return {
+      ...memberToUpdate,
+      user: userResponseDto(memberToUpdate.user),
+    };
 
 };
 
