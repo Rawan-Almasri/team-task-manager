@@ -33,3 +33,15 @@ Team
 git clone https://github.com/Rawan-Almasri/team-task-manager.git
 cd team-task-manager
 npm install
+
+```
+
+## API Documentation
+
+### Postman Collection
+
+Download the Postman Collection:
+
+- [Team Task Manager Collection](./docs/Team-Task-Manager.postman_collection.json)
+
+Import the collection into Postman to test all available endpoints.
