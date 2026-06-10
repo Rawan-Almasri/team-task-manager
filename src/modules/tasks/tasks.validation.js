@@ -86,5 +86,11 @@ export const getProjectTasksSchema = z.object({
     order: z
       .enum(["asc", "desc"])
       .optional(),
+
+
+      //Pagination variables check
+     page: z.coerce.number().min(1).optional(),
+      limit: z.coerce.number().min(1).max(100).optional(),
+
   }),
 })

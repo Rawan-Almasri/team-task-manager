@@ -83,7 +83,7 @@ export const createTaskService = async ({ projectId, userId, title, description,
 
 
 export const getProjectTasksService = async ({ 
-  projectId, userId, filters, sorting
+  projectId, userId, filters, sorting,pagination
 
 }) => {
   const project = await projectRepository.findOne({
@@ -108,7 +108,13 @@ export const getProjectTasksService = async ({
     throw new AppError("You are not allowed to view tasks in this project", 403);
   }
 
-  const tasks = await taskRepository.find({
+  const page = Number(pagination?.page) || 1;
+
+  const limit = Number(pagination?.limit) || 10;
+
+  const skip = (page - 1) * limit;
+
+  const [tasks, totalItems] = await taskRepository.findAndCount({
     where: {
       project: { id: projectId },
       ...(filters.status && { status: filters.status }),
@@ -117,7 +123,10 @@ export const getProjectTasksService = async ({
 
     },
 
-      order: buildSorting(
+    skip,
+    take: limit,
+
+  order: buildSorting(
     sorting.sortBy,
     sorting.order
   ),
@@ -128,11 +137,22 @@ export const getProjectTasksService = async ({
     },
   });
 
-    return tasks.map((task) => ({
+  const totalPages =
+  Math.ceil(totalItems / limit);
+
+    return {
+    tasks: tasks.map((task) => ({
       ...task,
       createdBy: userResponseDto(task.createdBy),
       assignedTo: userResponseDto(task.assignedTo),
-    }));
+    })),
+    pagination: {
+      currentPage: page,
+      limit,
+      totalItems,
+      totalPages
+    }
+  };
 };
 
 export const getTaskByIdService = async ({ taskId, userId }) => {

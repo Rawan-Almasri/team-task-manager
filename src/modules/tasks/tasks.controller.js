@@ -37,6 +37,10 @@ export const getProjectTasks = async (req, res, next) => {
    sorting : {
     sortBy: req.query.sortBy,
     order: req.query.order,
+   }, 
+   pagination: {
+    page: req.query.page,
+    limit: req.query.limit,
    }
     });
 
