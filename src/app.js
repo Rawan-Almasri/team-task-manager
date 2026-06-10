@@ -5,7 +5,7 @@ import teamsRoutes from "./modules/teams/teams.routes.js";
 import membersRoutes from "./modules/Team Members/members.routes.js";
 import projectsRoutes from "./modules/projects/projects.routes.js";
 import tasksRoutes from "./modules/tasks/tasks.routes.js";
-
+import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
 const app = express ();  //you got error here
 app.use(express.json());
 
@@ -21,6 +21,7 @@ app.use("/api/v1/teams", teamsRoutes);
 app.use("/api/v1", membersRoutes);
 app.use("/api/v1", projectsRoutes);
 app.use("/api/v1", tasksRoutes);
+app.use("/api/v1/dashboard", dashboardRoutes);
 
 app.use(errorHandler);
 
