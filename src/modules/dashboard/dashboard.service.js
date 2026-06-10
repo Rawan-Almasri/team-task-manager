@@ -3,6 +3,10 @@ import {TeamMember} from "../../entities/TeamMember.js";
 import {Project} from "../../entities/Project.js";
 import {Task} from "../../entities/Task.js";
 
+import { ILike } from "typeorm";
+import { userResponseDto } from "../../dtos/user.dto.js";
+import { buildSorting } from "../../utils/buildSorting.js";
+
 const TeamMemberRepository = AppDataSource.getRepository(TeamMember);
 const ProjectRepository = AppDataSource.getRepository(Project);    
 const TaskRepository = AppDataSource.getRepository(Task);
@@ -73,4 +77,28 @@ export const getDashboardStatsService  = async (userID) => {
       cancelled: cancelledTasksCount,
     },
   };
+};
+
+export const getMyAssignedTasksService = async ({userID, filters, sorting}) => {
+    const tasks = await TaskRepository.find ({
+        where: {
+            assignedTo: { id: userID },
+
+    ...(filters.status && { status: filters.status }),
+    ...(filters.priority && { priority: filters.priority }),
+    ...(filters.search && { title: ILike(`%${filters.search}%`) }),
+        }, 
+        relations: {
+            project: {team : true},
+            createdBy: true,
+            assignedTo: true,
+        },
+        order: buildSorting(sorting.sortBy, sorting.order),
+    });
+
+    return tasks.map(task => ({
+        ...task,
+        createdBy: userResponseDto(task.createdBy),
+        assignedTo: userResponseDto(task.assignedTo),   
+    }));
 };
