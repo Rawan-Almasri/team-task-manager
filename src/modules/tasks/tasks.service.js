@@ -7,7 +7,8 @@ import { User } from "../../entities/User.js";
 
 import { AppError } from "../../utils/AppError.js";
 import { userResponseDto } from "../../dtos/user.dto.js";
-
+import { authorizeTeamMember } from "../../utils/authorization.js";
+import { ILike } from "typeorm";
 
 const taskRepository = AppDataSource.getRepository(Task);
 const projectRepository = AppDataSource.getRepository(Project);
@@ -41,12 +42,9 @@ export const createTaskService = async ({ projectId, userId, title, description,
     throw new AppError("You are not a member of this project team", 403);
   }
 
-  const isAllowed = currentUserMembership.role === "admin" || currentUserMembership.role === "manager" || currentUserMembership.isOwner === true;
-
-  if (!isAllowed) {
-    throw new AppError("Only admin or manager can create tasks", 403);
-  }
-
+        authorizeTeamMember(currentUserMembership, ["admin", "manager"], {
+        message: "Only admin or manager can create tasks",
+      }); 
   let assignedUser = null;
 
   if (assignedToId) {
@@ -83,7 +81,10 @@ export const createTaskService = async ({ projectId, userId, title, description,
 };
 
 
-export const getProjectTasksService = async ({ projectId, userId }) => {
+export const getProjectTasksService = async ({ 
+  projectId, userId, filters, sorting
+
+}) => {
   const project = await projectRepository.findOne({
     where: {   id: projectId,   },
     relations: {
@@ -109,13 +110,20 @@ export const getProjectTasksService = async ({ projectId, userId }) => {
   const tasks = await taskRepository.find({
     where: {
       project: { id: projectId },
+      ...(filters.status && { status: filters.status }),
+      ...(filters.priority && {priority: filters.priority, }),
+     ...(filters.search && { title: ILike(`%${filters.search}%`),}),
+
+    },
+    order: {
+      ...(sorting.sortBy 
+        ? { [sorting.sortBy]: sorting.order || "ASC" } 
+        : {createdAt: "DESC",}
+      ),
     },
     relations: {
       createdBy: true,
       assignedTo: true,
-    },
-    order: {
-      createdAt: "DESC",
     },
   });
 
@@ -188,12 +196,9 @@ export const updateTaskService = async ({ taskId, userId, data }) => {
     throw new AppError("You are not allowed to update this task", 403);
   }
 
-  const isAllowed =
-    membership.role === "admin" || membership.role === "manager" || membership.isOwner === true;
-
-  if (!isAllowed) {
-    throw new AppError("Only admin or manager can update tasks", 403);
-  }
+  authorizeTeamMember(membership, ["admin", "manager"], {
+    message: "Only admin or manager can update tasks",
+  });
 
   if (data.title !== undefined) {
     task.title = data.title;
@@ -276,14 +281,11 @@ export const deleteTaskService = async ({ taskId, userId }) => {
 
   if (!membership) {
     throw new AppError("You are not allowed to delete this task", 403);
-  }
+    }
 
-  const isAllowed = membership.role === "admin" || membership.role === "manager" || membership.isOwner === true;
-
-  if (!isAllowed) {
-    throw new AppError("Only admin or manager can delete tasks", 403);
-  }
-
+    authorizeTeamMember(membership, ["admin", "manager"], {
+      message: "Only admin or manager can delete tasks",
+    });
   await taskRepository.remove(task);
 
   return true;
@@ -293,7 +295,7 @@ export const deleteTaskService = async ({ taskId, userId }) => {
 
 export const updateTaskStatusService = async ({ taskId, userId, status }) => {
   const task = await taskRepository.findOne({
-    where: { id: taskId, },
+    where: { id: taskId},
     relations: {
       project: { team: true,},
       assignedTo: true,
@@ -320,7 +322,7 @@ export const updateTaskStatusService = async ({ taskId, userId, status }) => {
     membership.role === "admin" ||
     membership.role === "manager" ||
     membership.isOwner === true;
-
+q
   const isAssignedUser = task.assignedTo && task.assignedTo.id === userId;
 
   if (!isAdminOrManagerOrOwner && !isAssignedUser) {

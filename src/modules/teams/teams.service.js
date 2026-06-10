@@ -5,6 +5,8 @@ import { TeamMember } from "../../entities/TeamMember.js";
 import { AppError } from "../../utils/AppError.js";
 import { userResponseDto } from "../../dtos/user.dto.js";
 
+import { authorizeTeamMember, authorizeTeamOwner } from "../../utils/authorization.js";
+
 const teamRepository = AppDataSource.getRepository(Team);
 const teamMemberRepository = AppDataSource.getRepository(TeamMember);
 
@@ -89,11 +91,11 @@ export const updateTeamService = async ({teamId, userId, data}) => {
   if (!membership) {
     throw new AppError("Team not found or you are not a member", 404);
   }
-  const isAllowed = membership.isOwner || membership.role === "admin";
-  if  (!isAllowed) {
-        throw new AppError("You are not allowed to update this team", 403);
-  }
-  if (data.name !== undefined) {
+    authorizeTeamMember(membership, ["admin"], {
+      message: "You are not allowed to update this team",
+    });
+
+if (data.name !== undefined) {
     membership.team.name = data.name;
   }
   if (data.description !== undefined) {
@@ -117,10 +119,7 @@ export const deleteTeamService = async ({userId,teamId}) => {
   if (!membership) {
     throw new AppError("Team not found or you are not a member", 404);
   }
-  if (!membership.isOwner) {
-      throw new AppError("Only team owner can delete this team", 403);
-  }
-
+    authorizeTeamOwner(membership, "Only team owner can delete this team"); 
   await teamRepository.remove(membership.team);
 
   return true;

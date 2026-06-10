@@ -3,6 +3,7 @@ import { AppError } from "../../utils/AppError.js";
 import { TeamMember } from "../../entities/TeamMember.js";
 import { User } from "../../entities/User.js";
 import { userResponseDto } from "../../dtos/user.dto.js";
+import { authorizeTeamMember } from "../../utils/authorization.js";
 
 const teamMemberRepository = AppDataSource.getRepository(TeamMember);
 const userRepository = AppDataSource.getRepository(User);
@@ -28,11 +29,11 @@ export const getTeamMembersService = async ({teamId, userId}) => {
     });
 
   console.log("members length:", members.length);
-console.log(members.map((m) => ({
-  memberId: m.id,
-  teamId: m.team?.id,
-  userId: m.user?.id,
-})));
+    console.log(members.map((m) => ({
+      memberId: m.id,
+      teamId: m.team?.id,
+      userId: m.user?.id,
+    })));
 
   return members.map((member) => ({
     ...userResponseDto(member.user),
@@ -52,11 +53,11 @@ export const addMemberService = async ({teamId, currentUserId, email, role}) => 
     if (!membership) {
             throw new AppError("Team not found or you are not a member", 404);
   }
-  const isAllowed = membership.isOwner || membership.role === 'admin';
-  if (!isAllowed) {
-        throw new AppError("Only admin or owner can add members", 403);
-  }
-  const userToAdd = await  userRepository.findOne({
+    authorizeTeamMember(membership, ["admin"], {
+      message: "Only admin or owner can add members",
+    }); 
+
+const userToAdd = await  userRepository.findOne({
     where : {
         email: email
     }
@@ -100,10 +101,9 @@ export const changeMemberRoleService  = async ({teamId, currentUserId, memberId,
   if (!currentUserMembership) {
     throw new AppError("Team not found or you are not a member", 404);
   }
-    const isAllowed = currentUserMembership.isOwner || currentUserMembership.role === 'admin';
-  if (!isAllowed) {
-        throw new AppError("Only admin or owner can add members", 403);
-  }
+    authorizeTeamMember(currentUserMembership, ["admin"], {
+      message: "Only admin or owner can change member roles",
+    });
   const memberToUpdate  = await  teamMemberRepository.findOne({
         where : {
             team : {id : teamId},
@@ -140,10 +140,9 @@ export const removeMemberService  = async ({teamId, currentUserId, memberId}) =>
   if (!currentUserMembership) {
     throw new AppError("Team not found or you are not a member", 404);
   }
-    const isAllowed = currentUserMembership.isOwner || currentUserMembership.role === 'admin';
-  if (!isAllowed) {
-    throw new AppError("Only admin or owner can remove members", 403);
-  }
+    authorizeTeamMember(currentUserMembership, ["admin"], {
+      message: "Only admin or owner can remove members",
+    });
   const memberToRemove   = await  teamMemberRepository.findOne({
         where : {
             team : {id : teamId},

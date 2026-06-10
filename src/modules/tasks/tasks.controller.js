@@ -29,6 +29,15 @@ export const getProjectTasks = async (req, res, next) => {
     const tasks = await getProjectTasksService({
       projectId: req.params.projectId,
       userId: req.user.id,
+    filters: {
+      status: req.query.status,
+      priority: req.query.priority,
+      search: req.query.search,
+   },
+   sorting : {
+    sortBy: req.query.sortBy,
+    order: req.query.order,
+   }
     });
 
     res.status(200).json({

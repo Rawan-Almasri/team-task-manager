@@ -3,6 +3,8 @@ import { Project } from "../../entities/Project.js";
 import { TeamMember } from "../../entities/TeamMember.js";
 import { AppError } from "../../utils/AppError.js";
 import { userResponseDto } from "../../dtos/user.dto.js";
+import { authorizeTeamMember } from "../../utils/authorization.js";
+
 
 const projectRepository  = AppDataSource.getRepository (Project);
 const teamMemberRepository   = AppDataSource.getRepository (TeamMember);
@@ -19,15 +21,9 @@ export const createProjectService = async ({teamId, userId, name, description}) 
     },
     });
 
-      if (!membership) {
-    throw new AppError("Team not found or you are not a member", 404);
-  }
-
-  const isAllowed = membership.role === "admin" ||  membership.role === "manager" ||  membership.isOwner;
-
-  if (!isAllowed) {
-    throw new AppError("Only admin or manager can create projects", 403);
-  }
+  authorizeTeamMember(membership, ["admin", "manager"], {
+    message: "Only admin or manager can create projects",
+  });
 
   const project = projectRepository.create ({
     name,
@@ -53,16 +49,16 @@ export const getTeamProjectsService = async ({ teamId, userId }) => {
     },
   });
 
-  if (!membership) {
-    throw new AppError("Team not found or you are not a member", 404);
-  }
+  authorizeTeamMember(membership, ["admin", "manager", "member"], {
+    message: "You are not allowed to view this team's projects",
+  });
 
   const projects = await projectRepository.find({
     where: {
       team: { id: teamId },
     },
     relations: {
-      createdBy: true, //////////////////////
+      createdBy: true, 
     },
     order: {
       createdAt: "DESC",
@@ -98,10 +94,9 @@ export const getProjectByIdService = async ({ projectId, userId }) => {
     },
   });
 
-  if (!membership) {
-    throw new AppError("You are not allowed to view this project", 403);
-  }
-
+  authorizeTeamMember(membership, ["admin", "manager", "member"], {
+    message: "You are not allowed to view this project",
+  });
 
     return {
     ...project,
@@ -128,16 +123,12 @@ export const updateProjectService  = async ({projectId, userId, data}) => {
         team : {id: project.team.id}
     }
   });
-   if (!membership) {
-    throw new AppError("You are not allowed to update this project", 403);
-  }
-  const isAllowed = membership.role === "admin" || membership.role === "manager" || membership.isOwner ;
 
-  if (!isAllowed) {
-    throw new AppError("Only admin or manager can update projects", 403);
-  }
+    authorizeTeamMember(membership, ["admin", "manager"], {
+      message: "Only admin or manager can update projects",
+    });
 
-  if (data.name !== undefined) {
+if (data.name !== undefined) {
     project.name = data.name;
   }
 
@@ -166,15 +157,14 @@ export const deleteProjectService   = async ({projectId, userId}) => {
         team : {id: project.team.id}
     }
   });
-   if (!membership) {
-    throw new AppError("You are not allowed to update this project", 403);
-  }
-  const isAllowed = membership.role === "admin" ||  membership.isOwner ;
 
-
-  if (!isAllowed) {
-    throw new AppError("Only admin or owner can delete projects", 403);
+  if (!membership) {
+    throw new AppError("You are not allowed to delete this project", 403);
   }
+
+  authorizeTeamMember(membership, ["admin"], {
+    message: "Only admin or owner can delete projects",
+  });
 
   await projectRepository.remove(project);
   return true;

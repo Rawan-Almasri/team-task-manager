@@ -62,3 +62,29 @@ export const updateTaskStatusSchema = z.object({
     ),
   }),
 });
+
+
+//search and filter tasks validation schema
+//sort task schema
+
+export const getProjectTasksSchema = z.object({
+  query: z.object({
+    status: z
+      .enum(["todo", "in_progress", "done", "cancelled"])
+      .optional(),
+
+    priority: z
+      .enum(["low", "medium", "high", "urgent"])
+      .optional(),
+
+    search: z.string().optional(),
+
+    sortBy: z
+      .enum(["createdAt", "updatedAt", "title", "priority"])
+      .optional(),
+
+    order: z
+      .enum(["asc", "desc"])
+      .optional(),
+  }),
+})
