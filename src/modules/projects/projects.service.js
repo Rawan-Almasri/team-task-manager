@@ -5,6 +5,8 @@ import { AppError } from "../../utils/AppError.js";
 import { userResponseDto } from "../../dtos/user.dto.js";
 import { authorizeTeamMember } from "../../utils/authorization.js";
 
+import { buildSorting } from "../../utils/buildSorting.js";
+
 
 const projectRepository  = AppDataSource.getRepository (Project);
 const teamMemberRepository   = AppDataSource.getRepository (TeamMember);
@@ -41,7 +43,9 @@ export const createProjectService = async ({teamId, userId, name, description}) 
 };
 
 
-export const getTeamProjectsService = async ({ teamId, userId }) => {
+export const getTeamProjectsService = async ({ 
+  teamId, userId , sorting
+}) => {
   const membership = await teamMemberRepository.findOne({
     where: {
       team: { id: teamId },
@@ -60,9 +64,10 @@ export const getTeamProjectsService = async ({ teamId, userId }) => {
     relations: {
       createdBy: true, 
     },
-    order: {
-      createdAt: "DESC",
-    },
+    order: buildSorting(
+      sorting?.sortBy,
+      sorting?.order
+    ),
   });
 
     return projects.map((project) => ({

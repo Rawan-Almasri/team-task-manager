@@ -36,3 +36,20 @@ export const updateProjectSchema = z.object({
     description: z.string().optional(),
   }),
 });
+
+
+export const getTeamProjectsSchema = z.object({
+  query: z.object({
+    sortBy: z
+      .enum([
+        "name",
+        "createdAt",
+        "updatedAt",
+      ])
+      .optional(),
+
+    order: z
+      .enum(["asc", "desc"])
+      .optional(),
+  }),
+});

@@ -6,6 +6,7 @@ import { TeamMember } from "../../entities/TeamMember.js";
 import { User } from "../../entities/User.js";
 
 import { AppError } from "../../utils/AppError.js";
+import { buildSorting } from "../../utils/buildSorting.js";
 import { userResponseDto } from "../../dtos/user.dto.js";
 import { authorizeTeamMember } from "../../utils/authorization.js";
 import { ILike } from "typeorm";
@@ -115,12 +116,12 @@ export const getProjectTasksService = async ({
      ...(filters.search && { title: ILike(`%${filters.search}%`),}),
 
     },
-    order: {
-      ...(sorting.sortBy 
-        ? { [sorting.sortBy]: sorting.order || "ASC" } 
-        : {createdAt: "DESC",}
-      ),
-    },
+
+      order: buildSorting(
+    sorting.sortBy,
+    sorting.order
+  ),
+
     relations: {
       createdBy: true,
       assignedTo: true,

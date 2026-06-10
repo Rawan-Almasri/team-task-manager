@@ -32,6 +32,10 @@ export const getTeamProjects = async (req, res, next) => {
     const projects = await getTeamProjectsService({
       teamId: req.params.teamId,
       userId: req.user.id,
+      sorting : { 
+        sortBy: req.query.sortBy,
+        order: req.query.order
+      }
     });
 
     res.status(200).json({
